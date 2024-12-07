@@ -87,12 +87,14 @@ void performSJF(vector<Job>& jobs) {
     }
 }
 
-// RR scheduling algorithm
-void handleRoundRobin(vector<Job>& jobs, int timeSlice, int overheadTime) {
+// RR scheduling algorithm with new metrics
+void handleRoundRobin(vector<Job>& jobs, int timeSlice, int overheadTime, double& totalSimulationTime, double& avgQueueLength, int& maxQueueLength) {
     queue<Job*> readyJobs;
     double current_time = 0;
     vector<bool> completedJobs(jobs.size(), false);
     vector<bool> inQueue(jobs.size(), false);
+    double queueLengthSum = 0;
+    int queueLengthCount = 0;
 
     while (true) {
         for (auto& job : jobs) {
@@ -101,6 +103,10 @@ void handleRoundRobin(vector<Job>& jobs, int timeSlice, int overheadTime) {
                 inQueue[job.id] = true;
             }
         }
+
+        maxQueueLength = max(maxQueueLength, static_cast<int>(readyJobs.size()));
+        queueLengthSum += readyJobs.size();
+        queueLengthCount++;
 
         if (readyJobs.empty()) {
             current_time++;
@@ -128,6 +134,9 @@ void handleRoundRobin(vector<Job>& jobs, int timeSlice, int overheadTime) {
             break;
         }
     }
+
+    totalSimulationTime = current_time;
+    avgQueueLength = queueLengthSum / queueLengthCount;
 }
 
 // Function to evaluate performance metrics
@@ -151,10 +160,18 @@ void conductRRAnalysis(vector<Job> jobs) {
 
     for (int overhead : overheadOptions) {
         for (int quantum : quantumValues) {
+            double totalSimulationTime = 0;
+            double avgQueueLength = 0;
+            int maxQueueLength = 0;
+
             cout << "Round Robin with Quantum: " << quantum << "ms and Overhead: " << overhead << "ms\n";
             auto tempJobs = jobs;
-            handleRoundRobin(tempJobs, quantum, overhead);
+            handleRoundRobin(tempJobs, quantum, overhead, totalSimulationTime, avgQueueLength, maxQueueLength);
+
             computePerformanceMetrics(tempJobs);
+            cout << "Total Simulation Time: " << totalSimulationTime << " seconds\n";
+            cout << "Average Ready Queue Length: " << avgQueueLength << "\n";
+            cout << "Maximum Ready Queue Length: " << maxQueueLength << "\n";
             cout << "---------------------------\n";
         }
     }
